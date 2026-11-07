@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitacora Yasma Investments</title>
+    <!-- Minimalist Cyan SVG Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2304060a' stroke='%2300ffff' stroke-width='6'/><path d='M30 65 L45 45 L58 55 L75 30' fill='none' stroke='%2300ffff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/><path d='M65 30 H75 V40' fill='none' stroke='%2300ffff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#04060a',
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        mono: ['Share Tech Mono', 'monospace'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Modern Glassmorphic Theme Engine & High Contrast Inputs */
+        :root {
+            --primary-neon: #00ffff;
+            --primary-glow: rgba(0, 255, 255, 0.4);
+            --border-neon: rgba(0, 255, 255, 0.35);
+            --hover-highlight: rgba(0, 255, 255, 0.12);
+            --active-highlight: rgba(0, 255, 255, 0.28);
+            --input-bg: rgba(10, 16, 26, 0.88);
+            --input-border: rgba(0, 255, 255, 0.3);
+        }
+
+        body.theme-red {
+            --primary-neon: #ff003c;
+            --primary-glow: rgba(255, 0, 60, 0.4);
+            --border-neon: rgba(255, 0, 60, 0.35);
+            --hover-highlight: rgba(255, 0, 60, 0.12);
+            --active-highlight: rgba(255, 0, 60, 0.28);
+            --input-bg: rgba(26, 10, 16, 0.88);
+            --input-border: rgba(255, 0, 60, 0.3);
+        }
+
+        body {
+            background-color: #04060a;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Canvas Background */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism Containers */
+        .glass-card {
+            background: rgba(10, 14, 22, 0.75);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--border-neon);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        .glass-header {
+            background: rgba(8, 12, 18, 0.90);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-neon);
+        }
+
+        .neon-text {
+            color: var(--primary-neon) !important;
+            text-shadow: 0 0 14px var(--primary-glow);
+        }
+
+        /* Glowing and Dimming Animation for Title */
+        .neon-title-pulse {
+            animation: titlePulseGlow 3s infinite ease-in-out;
+        }
+
+        @keyframes titlePulseGlow {
+            0%, 100% {
+                color: var(--primary-neon);
+                text-shadow: 0 0 8px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 35px var(--primary-neon);
+                opacity: 1;
+            }
+            50% {
+                color: rgba(255, 255, 255, 0.7);
+                text-shadow: 0 0 2px var(--primary-glow);
+                opacity: 0.55;
+            }
+        }
+
+        .neon-glow-btn {
+            background: rgba(12, 18, 28, 0.85);
+            border: 1px solid var(--border-neon);
+            color: var(--primary-neon);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .neon-glow-btn:hover {
+            background: var(--primary-neon);
+            color: #000;
+            box-shadow: 0 0 25px var(--primary-neon);
+            transform: translateY(-2px);
+        }
+
+        /* Table & Dynamic High-Contrast Inputs */
+        .trade-table-container {
+            max-height: calc(100vh - 310px);
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .trade-table th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(6, 9, 15, 0.96);
+            backdrop-filter: blur(14px);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border-neon);
+        }
+
+        .trade-row {
+            transition: background-color 0.2s ease;
+        }
+
+        .trade-row:hover {
+            background-color: var(--hover-highlight) !important;
+        }
+
+        .trade-row.selected-row {
+            background-color: var(--active-highlight) !important;
+        }
+
+        /* CRITICAL VISIBILITY INPUT STYLING */
+        .cell-input {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: #ffffff;
+            width: 100%;
+            min-width: 75px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-family: 'Share Tech Mono', monospace;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .cell-input:focus {
+            outline: none;
+            background: #000000;
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .cell-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        /* Neon Indicators */
+        .badge-positive {
+            background: #00ff66 !important;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.9);
+        }
+
+        .badge-negative {
+            background: #ff003c !important;
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.9);
+        }
+
+        /* iOS Spring Animations */
+        .ios-bounce {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .ios-bounce:active {
+            transform: scale(0.92);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(4, 6, 10, 0.9);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-neon);
+        }
+    </style>
+</head>
+<body class="theme-cyan min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
+
+    <!-- Canvas Animation Background -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- App Main Container -->
+    <div class="flex-1 flex flex-col w-full max-w-[1750px] mx-auto px-3 sm:px-6 py-4">
+
+        <!-- HEADER SECTION -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-5 gap-4 p-4 rounded-2xl glass-card">
+            <!-- Branding -->
+            <div class="text-center md:text-left">
+                <h1 class="text-2xl sm:text-4xl font-black font-orbitron tracking-wider neon-title-pulse uppercase">
+                    Bitacora Yasma Investments
+                </h1>
+                <p class="text-xs sm:text-sm font-orbitron font-bold tracking-widest text-gray-200 mt-1">
+                    KEEP IT SIMPLE
+                </p>
+                <p class="text-xs sm:text-sm text-gray-300 italic mt-0.5 font-light">
+                    "Que hoy no sea mi realidad no significa que no pueda llegar a serlo"
+                </p>
+            </div>
+
+            <!-- Top Action Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Save JSON (Icon Only) -->
+                <button id="btnExport" title="Guardar Bitácora en PC" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
+                    <i class="fa-solid fa-download text-lg"></i>
+                </button>
+
+                <!-- Import / Drive (Icon Only) -->
+                <button id="btnImport" title="Importar desde PC / Google Drive" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                </button>
+                <input type="file" id="fileInput" accept=".json" class="hidden" />
+
+                <!-- Theme Switcher -->
+                <div class="flex items-center bg-black/60 p-1.5 rounded-xl border border-white/10">
+                    <button id="themeCyanBtn" class="px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold transition-all flex items-center gap-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/50">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00ffff]"></span> CYAN
+                    </button>
+                    <button id="themeRedBtn" class="px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold transition-all flex items-center gap-1.5 text-gray-400 hover:text-red-400">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500/40"></span> RED
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- STICKY TOP METRICS & CONTROLS BAR -->
+        <div class="sticky top-2 z-30 mb-5 p-4 rounded-2xl glass-header shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                
+                <!-- Filters & Controls -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Month Filter -->
+                    <div class="flex items-center gap-2 bg-black/70 px-3 py-2 rounded-xl border border-white/15">
+                        <i class="fa-solid fa-filter text-xs text-gray-400"></i>
+                        <select id="monthFilter" class="bg-transparent text-sm font-orbitron text-gray-100 focus:outline-none cursor-pointer">
+                            <option value="ALL" class="bg-gray-900">Todos los Meses</option>
+                            <option value="0" class="bg-gray-900">Enero</option>
+                            <option value="1" class="bg-gray-900">Febrero</option>
+                            <option value="2" class="bg-gray-900">Marzo</option>
+                            <option value="3" class="bg-gray-900">Abril</option>
+                            <option value="5" class="bg-gray-900">Mayo</option>
+                            <option value="5" class="bg-gray-900">Junio</option>
+                            <option value="6" class="bg-gray-900">Julio</option>
+                            <option value="7" class="bg-gray-900">Agosto</option>
+                            <option value="8" class="bg-gray-900">Septiembre</option>
+                            <option value="9" class="bg-gray-900">Octubre</option>
+                            <option value="10" class="bg-gray-900">Noviembre</option>
+                            <option value="11" class="bg-gray-900">Diciembre</option>
+                        </select>
+                    </div>
+
+                    <!-- External Injection Capital Input -->
+                    <div class="flex items-center gap-2 bg-black/70 px-3 py-1.5 rounded-xl border border-white/15">
+                        <i class="fa-solid fa-sack-dollar text-xs text-amber-400"></i>
+                        <span class="text-xs font-mono text-gray-300">Inyección Externa:</span>
+                        <input type="number" id="externalDepositInput" placeholder="$0.00" class="w-28 bg-black/90 border border-amber-500/40 rounded-lg px-2 py-1 text-xs font-mono text-amber-400 focus:outline-none text-right font-bold" />
+                    </div>
+
+                    <!-- View Toggle Button (Table / Chart) -->
+                    <button id="btnToggleView" class="neon-glow-btn px-4 py-2 rounded-xl text-xs font-orbitron font-bold flex items-center gap-2 ios-bounce">
+                        <i class="fa-solid fa-chart-line"></i> <span id="toggleViewText">Ver Gráfico de Crecimiento</span>
+                    </button>
+                </div>
+
+                <!-- Metrics Display -->
+                <div class="flex flex-wrap items-center gap-5">
+                    <div class="flex flex-col text-right">
+                        <span class="text-[10px] font-orbitron text-gray-400 uppercase tracking-widest">Total Trades</span>
+                        <span id="metricTotalTrades" class="text-base font-mono font-bold text-gray-100">0</span>
+                    </div>
+
+                    <div class="flex flex-col text-right">
+                        <span class="text-[10px] font-orbitron text-gray-400 uppercase tracking-widest">Dinero Obtenido</span>
+                        <span id="metricTotalEarnings" class="text-base font-mono font-bold text-emerald-400">$0.00</span>
+                    </div>
+
+                    <div class="flex items-center gap-2.5 pl-4 border-l border-white/15">
+                        <div id="dailyIndicatorBadge" class="w-4 h-4 rounded-full badge-positive transition-all duration-300"></div>
+                        <div class="flex flex-col text-right">
+                            <span class="text-[10px] font-orbitron text-gray-400 uppercase tracking-widest">Capital Último Trade</span>
+                            <span id="metricCurrentCapital" class="text-lg font-mono font-black text-white">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 relative">
+
+            <!-- TABLE VIEW -->
+            <div id="tableView" class="w-full flex flex-col gap-4">
+                
+                <div class="trade-table-container rounded-2xl glass-card">
+                    <table class="w-full text-left border-collapse trade-table" id="mainTradeTable">
+                        <thead>
+                            <tr class="text-[11px] text-gray-200 border-b border-white/10 uppercase tracking-wider">
+                                <th class="p-3 text-center">Color</th>
+                                <th class="p-3 text-center"># Dia</th>
+                                <th class="p-3 text-center"># Trade</th>
+                                <th class="p-3 text-center">Fecha</th>
+                                <th class="p-3 text-center">Monto Inicial</th>
+                                <th class="p-3 text-center">% Uso</th>
+                                <th class="p-3 text-center">$ Sugerido</th>
+                                <th class="p-3 text-center">$ Inv.</th>
+                                <th class="p-3 text-center">Qty</th>
+                                <th class="p-3 text-center">$ Venta</th>
+                                <th class="p-3 text-center">$ Ganado</th>
+                                <th class="p-3 text-center">Comp. / Vend.</th>
+                                <th class="p-3 text-center">% Gan.</th>
+                                <th class="p-3 text-center">Capital Total</th>
+                                <th class="p-3 text-center"><i class="fa-solid fa-trash-can"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradeTableBody">
+                            <!-- Dynamically Generated Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table Bottom Controls -->
+                <div class="flex flex-wrap justify-between items-center gap-3 px-2 py-2">
+                    <button id="btnAddRow" class="neon-glow-btn px-6 py-3 rounded-xl font-orbitron text-xs font-bold flex items-center gap-2 ios-bounce shadow-lg">
+                        <i class="fa-solid fa-plus"></i> Añadir Nueva Fila de Trade
+                    </button>
+
+                    <p class="text-xs font-mono text-gray-400">
+                        * Comisiones automáticas: <span class="text-gray-200">$0.66 compra + $0.66 venta</span> por contrato ($1.32 total por Qty).
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- CHART VIEW -->
+            <div id="chartView" class="hidden w-full flex-col gap-4">
+                <div class="p-6 rounded-2xl glass-card flex flex-col gap-4">
+                    <div class="flex justify-between items-center pb-4 border-b border-white/10">
+                        <div>
+                            <h2 class="text-xl font-orbitron font-bold neon-text">Gráfico de Crecimiento de Capital</h2>
+                            <p class="text-xs text-gray-400">Evolución progresiva de saldo acumulado por operaciones de trading</p>
+                        </div>
+                        <button id="btnBackToTable" class="neon-glow-btn px-5 py-2.5 rounded-xl text-xs font-orbitron font-bold flex items-center gap-2 ios-bounce">
+                            <i class="fa-solid fa-table"></i> Volver a la Tabla
+                        </button>
+                    </div>
+
+                    <div class="relative w-full h-[520px] pt-4">
+                        <canvas id="capitalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- APPLICATION LOGIC ENGINE -->
+    <script>
+        // Core State
+        let tradesData = [];
+        let activeTheme = 'cyan';
+        let currentView = 'table';
+        let selectedRowId = null;
+        let capitalChartInstance = null;
+
+        // DOM Elements
+        const tradeTableBody = document.getElementById('tradeTableBody');
+        const monthFilter = document.getElementById('monthFilter');
+        const externalDepositInput = document.getElementById('externalDepositInput');
+        const btnAddRow = document.getElementById('btnAddRow');
+        const btnExport = document.getElementById('btnExport');
+        const btnImport = document.getElementById('btnImport');
+        const fileInput = document.getElementById('fileInput');
+        const themeCyanBtn = document.getElementById('themeCyanBtn');
+        const themeRedBtn = document.getElementById('themeRedBtn');
+        const btnToggleView = document.getElementById('btnToggleView');
+        const btnBackToTable = document.getElementById('btnBackToTable');
+        const toggleViewText = document.getElementById('toggleViewText');
+        const tableView = document.getElementById('tableView');
+        const chartView = document.getElementById('chartView');
+
+        // Indicators
+        const metricTotalTrades = document.getElementById('metricTotalTrades');
+        const metricTotalEarnings = document.getElementById('metricTotalEarnings');
+        const metricCurrentCapital = document.getElementById('metricCurrentCapital');
+        const dailyIndicatorBadge = document.getElementById('dailyIndicatorBadge');
+
+        // Initialization
+        window.addEventListener('load', () => {
+            initParticlesCanvas();
+            loadLocalStorage();
+            renderTable();
+            updateMetrics();
+            initChart();
+        });
+
+        // Local Storage
+        function saveLocalStorage() {
+            localStorage.setItem('bitacora_yasma_investments_db', JSON.stringify({
+                trades: tradesData,
+                theme: activeTheme
+            }));
+        }
+
+        function loadLocalStorage() {
+            const saved = localStorage.getItem('bitacora_yasma_investments_db');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    tradesData = parsed.trades || [];
+                    if (parsed.theme) setTheme(parsed.theme);
+                } catch (e) {
+                    console.error("Error al cargar localStorage", e);
+                }
+            }
+        }
+
+        // Theme Switcher
+        function setTheme(theme) {
+            activeTheme = theme;
+            document.body.classList.remove('theme-cyan', 'theme-red');
+            if (theme === 'cyan') {
+                document.body.classList.add('theme-cyan');
+                themeCyanBtn.className = "px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold transition-all flex items-center gap-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/50";
+                themeRedBtn.className = "px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold transition-all flex items-center gap-1.5 text-gray-400 hover:text-red-400";
+            } else {
+                document.body.classList.add('theme-red');
+                themeRedBtn.className = "px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold transition-all flex items-center gap-1.5 bg-red-500/20 text-red-400 border border-red-500/50";
+                themeCyanBtn.className = "px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold transition-all flex items-center gap-1.5 text-gray-400 hover:text-cyan-400";
+            }
+            saveLocalStorage();
+            if (capitalChartInstance) updateChart();
+        }
+
+        themeCyanBtn.addEventListener('click', () => setTheme('cyan'));
+        themeRedBtn.addEventListener('click', () => setTheme('red'));
+
+        // Deposit Injections Listener
+        externalDepositInput.addEventListener('input', () => {
+            recalculateAllTrades();
+            renderTable();
+            updateMetrics();
+        });
+
+        // View Toggling
+        btnToggleView.addEventListener('click', toggleView);
+        btnBackToTable.addEventListener('click', () => {
+            if (currentView === 'chart') toggleView();
+        });
+
+        function toggleView() {
+            if (currentView === 'table') {
+                currentView = 'chart';
+                tableView.classList.add('hidden');
+                chartView.classList.remove('hidden');
+                chartView.classList.add('flex');
+                toggleViewText.innerText = "Ver Tabla de Trades";
+                updateChart();
+            } else {
+                currentView = 'table';
+                chartView.classList.add('hidden');
+                chartView.classList.remove('flex');
+                tableView.classList.remove('hidden');
+                toggleViewText.innerText = "Ver Gráfico de Crecimiento";
+            }
+        }
+
+        // Add Row Logic
+        btnAddRow.addEventListener('click', () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const externalInject = parseFloat(externalDepositInput.value) || 0;
+
+            let prevCapital = 0;
+            let prevDate = null;
+            let prevDayNum = 0;
+
+            if (tradesData.length > 0) {
+                const lastRow = tradesData[tradesData.length - 1];
+                prevCapital = lastRow.capitalTotal || 0;
+                prevDate = lastRow.fecha;
+                prevDayNum = lastRow.diaNum || 1;
+            }
+
+            let newDayNum = 1;
+            if (tradesData.length > 0) {
+                newDayNum = (prevDate === todayStr) ? prevDayNum : prevDayNum + 1;
+            }
+
+            const newTrade = {
+                id: Date.now(),
+                statusColor: 'green',
+                diaNum: newDayNum,
+                tradeNum: tradesData.length + 1,
+                fecha: todayStr,
+                montoInicial: prevCapital,
+                pctUso: '',
+                sugerido: 0,
+                inv: '',
+                qty: '',
+                venta: '',
+                ganado: 0,
+                horaCompra: '',
+                horaVenta: '',
+                pctGanado: 0,
+                capitalTotal: prevCapital + externalInject,
+                capitalOverridden: false
+            };
+
+            tradesData.push(newTrade);
+            recalculateAllTrades();
+            renderTable();
+            updateMetrics();
+            saveLocalStorage();
+        });
+
+        // Calculation Engine
+        function recalculateAllTrades() {
+            const externalInject = parseFloat(externalDepositInput.value) || 0;
+            let currentDayCounter = 1;
+            let previousDate = null;
+
+            tradesData.forEach((row, idx) => {
+                if (idx === 0) {
+                    currentDayCounter = 1;
+                    previousDate = row.fecha;
+                } else {
+                    if (row.fecha !== previousDate && row.fecha !== "") {
+                        currentDayCounter++;
+                        previousDate = row.fecha;
+                    }
+                }
+                row.diaNum = currentDayCounter;
+                row.tradeNum = idx + 1;
+
+                if (idx > 0) {
+                    row.montoInicial = tradesData[idx - 1].capitalTotal;
+                }
+
+                const uso = parseFloat(row.pctUso) || 0;
+                const montoInit = parseFloat(row.montoInicial) || 0;
+                row.sugerido = (montoInit * (uso / 100));
+
+                const inv = parseFloat(row.inv) || 0;
+                const qty = parseFloat(row.qty) || 0;
+                const venta = parseFloat(row.venta) || 0;
+
+                if (row.inv !== '' && row.venta !== '' && row.qty !== '') {
+                    row.ganado = (venta - inv) * qty;
+                } else {
+                    row.ganado = 0;
+                }
+
+                const totalInv = inv * qty;
+                row.pctGanado = totalInv > 0 ? (row.ganado / totalInv) * 100 : 0;
+
+                const brokerFees = 1.32 * qty;
+                if (!row.capitalOverridden) {
+                    row.capitalTotal = montoInit + row.ganado - brokerFees + (idx === tradesData.length - 1 ? externalInject : 0);
+                }
+
+                const prevCap = idx > 0 ? tradesData[idx - 1].capitalTotal : montoInit;
+                row.statusColor = row.capitalTotal >= prevCap ? 'green' : 'red';
+            });
+        }
+
+        // Render Table with High-Contrast Inputs
+        function renderTable() {
+            tradeTableBody.innerHTML = '';
+            const selectedMonth = monthFilter.value;
+
+            tradesData.forEach((row) => {
+                if (selectedMonth !== 'ALL' && row.fecha) {
+                    const rowMonth = new Date(row.fecha).getMonth().toString();
+                    if (rowMonth !== selectedMonth) return;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `trade-row border-b border-white/5 ${selectedRowId === row.id ? 'selected-row' : ''}`;
+                tr.dataset.id = row.id;
+
+                tr.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT' && !e.target.closest('button')) {
+                        document.querySelectorAll('.trade-row').forEach(r => r.classList.remove('selected-row'));
+                        tr.classList.add('selected-row');
+                        selectedRowId = row.id;
+                    }
+                });
+
+                const colorBadgeClass = row.statusColor === 'green' ? 'badge-positive' : 'badge-negative';
+
+                tr.innerHTML = `
+                    <td class="p-2 text-center">
+                        <div class="w-4 h-4 rounded mx-auto ${colorBadgeClass} transition-all"></div>
+                    </td>
+                    <td class="p-2 text-center font-mono text-gray-200 text-xs font-bold">${row.diaNum}</td>
+                    <td class="p-2 text-center font-mono text-gray-300 text-xs font-bold">${row.tradeNum}</td>
+                    <td class="p-2 text-center">
+                        <input type="date" value="${row.fecha}" data-field="fecha" class="cell-input text-xs" />
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="number" step="0.01" value="${row.montoInicial !== '' ? row.montoInicial : ''}" data-field="montoInicial" class="cell-input text-amber-300 font-bold" />
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="number" step="0.1" value="${row.pctUso}" data-field="pctUso" class="cell-input" />
+                    </td>
+                    <td class="p-2 text-center font-mono text-xs font-bold text-cyan-300">
+                        ${row.sugerido ? '$' + row.sugerido.toFixed(2) : ''}
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="number" step="0.01" value="${row.inv}" data-field="inv" class="cell-input" />
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="number" step="1" value="${row.qty}" data-field="qty" class="cell-input" />
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="number" step="0.01" value="${row.venta}" data-field="venta" class="cell-input" />
+                    </td>
+                    <td class="p-2 text-center font-mono text-xs font-bold ${row.ganado >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                        ${row.ganado !== 0 ? '$' + row.ganado.toFixed(2) : ''}
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="flex items-center gap-1">
+                            <input type="time" value="${row.horaCompra}" data-field="horaCompra" class="cell-input text-[11px] px-1" title="Hora Compra" />
+                            <span class="text-gray-400 text-xs font-bold">\</span>
+                            <input type="time" value="${row.horaVenta}" data-field="horaVenta" class="cell-input text-[11px] px-1" title="Hora Venta" />
+                        </div>
+                    </td>
+                    <td class="p-2 text-center font-mono text-xs font-bold ${row.pctGanado >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                        ${row.pctGanado !== 0 ? row.pctGanado.toFixed(2) + '%' : ''}
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="number" step="0.01" value="${row.capitalTotal !== undefined ? row.capitalTotal : ''}" data-field="capitalTotal" class="cell-input font-bold text-white" />
+                    </td>
+                    <td class="p-2 text-center">
+                        <button onclick="deleteRow(${row.id})" class="text-gray-400 hover:text-rose-500 transition-colors p-1.5 ios-bounce" title="Eliminar Trade">
+                            <i class="fa-solid fa-xmark text-base"></i>
+                        </button>
+                    </td>
+                `;
+
+                tr.querySelectorAll('.cell-input').forEach(input => {
+                    // Update model and trigger recalculations ONLY when typing is finished (blur, change, or Enter)
+                    input.addEventListener('change', (e) => handleCellChange(e, row.id));
+                    
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            input.blur(); // Triggers blur/change event when pressing Enter
+                        }
+                    });
+                });
+
+                tradeTableBody.appendChild(tr);
+            });
+        }
+
+        function handleCellChange(e, id) {
+            const field = e.target.dataset.field;
+            const val = e.target.value;
+            const row = tradesData.find(r => r.id === id);
+            if (!row) return;
+
+            if (field === 'capitalTotal') {
+                row.capitalTotal = parseFloat(val) || 0;
+                row.capitalOverridden = true;
+            } else {
+                row[field] = val;
+            }
+
+            recalculateAllTrades();
+            renderTable();
+            updateMetrics();
+            saveLocalStorage();
+            if (currentView === 'chart') updateChart();
+        }
+
+        window.deleteRow = function(id) {
+            tradesData = tradesData.filter(r => r.id !== id);
+            recalculateAllTrades();
+            renderTable();
+            updateMetrics();
+            saveLocalStorage();
+            if (currentView === 'chart') updateChart();
+        };
+
+        monthFilter.addEventListener('change', () => {
+            renderTable();
+            updateMetrics();
+        });
+
+        function updateMetrics() {
+            const selectedMonth = monthFilter.value;
+            const filteredTrades = tradesData.filter(row => {
+                if (selectedMonth === 'ALL' || !row.fecha) return true;
+                return new Date(row.fecha).getMonth().toString() === selectedMonth;
+            });
+
+            metricTotalTrades.innerText = filteredTrades.length;
+
+            const netEarnings = filteredTrades.reduce((acc, r) => acc + (r.ganado || 0), 0);
+            metricTotalEarnings.innerText = `$${netEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            metricTotalEarnings.className = `text-base font-mono font-bold ${netEarnings >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            if (tradesData.length > 0) {
+                const lastRow = tradesData[tradesData.length - 1];
+                const cap = lastRow.capitalTotal || 0;
+                metricCurrentCapital.innerText = `$${cap.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                dailyIndicatorBadge.className = `w-4 h-4 rounded-full ${lastRow.statusColor === 'green' ? 'badge-positive' : 'badge-negative'} transition-all`;
+            } else {
+                metricCurrentCapital.innerText = "$0.00";
+                dailyIndicatorBadge.className = "w-4 h-4 rounded-full badge-positive transition-all";
+            }
+        }
+
+        // Export JSON
+        btnExport.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tradesData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Bitacora_Yasma_Investments_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        // Import JSON + Open Drive
+        btnImport.addEventListener('click', () => {
+            window.open('https://drive.google.com/drive/folders/1ggJ35LhC05PqJv6Lu9POYbV8y1nfKTzF?usp=drive_link', '_blank');
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        tradesData = importedData;
+                    } else if (importedData.trades) {
+                        tradesData = importedData.trades;
+                    }
+                    recalculateAllTrades();
+                    renderTable();
+                    updateMetrics();
+                    saveLocalStorage();
+                } catch (err) {
+                    console.error("Error al importar JSON", err);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Chart.js Setup
+        function initChart() {
+            const ctx = document.getElementById('capitalChart').getContext('2d');
+            const strokeColor = activeTheme === 'cyan' ? '#00ffff' : '#ff003c';
+
+            capitalChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Capital Total ($)',
+                        data: [],
+                        borderColor: strokeColor,
+                        backgroundColor: activeTheme === 'cyan' ? 'rgba(0, 255, 255, 0.1)' : 'rgba(255, 0, 60, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.25,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: strokeColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { color: '#cbd5e1', font: { family: 'Share Tech Mono' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { color: '#cbd5e1', font: { family: 'Share Tech Mono' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (!capitalChartInstance) return;
+
+            const labels = tradesData.map(r => `Trade #${r.tradeNum} (${r.fecha || 'N/A'})`);
+            const data = tradesData.map(r => r.capitalTotal);
+            const colorHex = activeTheme === 'cyan' ? '#00ffff' : '#ff003c';
+
+            capitalChartInstance.data.labels = labels;
+            capitalChartInstance.data.datasets[0].data = data;
+            capitalChartInstance.data.datasets[0].borderColor = colorHex;
+            capitalChartInstance.data.datasets[0].pointBackgroundColor = colorHex;
+            capitalChartInstance.data.datasets[0].backgroundColor = activeTheme === 'cyan' ? 'rgba(0, 255, 255, 0.1)' : 'rgba(255, 0, 60, 0.1)';
+            capitalChartInstance.update();
+        }
+
+        // CANVAS BACKGROUND ANIMATION
+        function initParticlesCanvas() {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            const particles = [];
+            const particleCount = 45;
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.7;
+                    this.vy = (Math.random() - 0.5) * 0.7;
+                    this.type = Math.floor(Math.random() * 3);
+                    this.size = Math.random() * 14 + 10;
+                    this.isGreenCandle = Math.random() > 0.5;
+                    this.alpha = Math.random() * 0.45 + 0.25;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.globalAlpha = this.alpha;
+                    const neonColor = activeTheme === 'cyan' ? '#00ffff' : '#ff003c';
+
+                    if (this.type === 0) {
+                        ctx.font = `${this.size}px Orbitron`;
+                        ctx.fillStyle = neonColor;
+                        ctx.fillText('$', this.x, this.y);
+                    } else if (this.type === 1) {
+                        ctx.font = `${this.size}px Share Tech Mono`;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText('%', this.x, this.y);
+                    } else {
+                        const candleColor = this.isGreenCandle ? '#00ff66' : '#ff003c';
+                        ctx.strokeStyle = candleColor;
+                        ctx.fillStyle = candleColor;
+
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y - 12);
+                        ctx.lineTo(this.x, this.y + 12);
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+
+                        ctx.fillRect(this.x - 4, this.y - 6, 8, 12);
+                    }
+
+                    ctx.restore();
+                }
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 130) {
+                            ctx.save();
+                            ctx.globalAlpha = (1 - dist / 130) * 0.15;
+                            ctx.strokeStyle = activeTheme === 'cyan' ? '#00ffff' : '#ff003c';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                }
+
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+    </script>
+</body>
+</html>
