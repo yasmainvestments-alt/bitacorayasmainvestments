@@ -247,13 +247,18 @@
 
             <!-- Top Action Controls -->
             <div class="flex items-center gap-3">
-                <!-- Save JSON (Icon Only) -->
-                <button id="btnExport" title="Guardar Bitácora en PC" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
+                <!-- Save JSON to PC (Icon Only) -->
+                <button id="btnExport" title="Guardar Bitácora en PC (.json)" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
                     <i class="fa-solid fa-download text-lg"></i>
                 </button>
 
-                <!-- Import / Drive (Icon Only) -->
-                <button id="btnImport" title="Importar desde PC / Google Drive" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
+                <!-- Import JSON from PC (Icon Only) -->
+                <button id="btnImportPC" title="Cargar archivo JSON desde PC" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
+                    <i class="fa-solid fa-folder-open text-lg"></i>
+                </button>
+
+                <!-- Google Drive Backup Link (Icon Only) -->
+                <button id="btnDrive" title="Abrir Google Drive" class="p-3.5 rounded-xl glass-card border hover:border-cyan-400 text-gray-200 hover:text-white ios-bounce flex items-center justify-center w-12 h-12">
                     <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
                 </button>
                 <input type="file" id="fileInput" accept=".json" class="hidden" />
@@ -373,7 +378,7 @@
                     </button>
 
                     <p class="text-xs font-mono text-gray-400">
-                        * Comisiones Charles Schwab: <span class="text-gray-200">$0.65 compra + $0.65 venta</span> por contrato. Puedes editar <span class="text-emerald-400 font-bold">$ Ganado</span> manualmente si es necesario.
+                        * Comisiones Charles Schwab: <span class="text-gray-200">$0.65 compra + $0.65 venta</span> por contrato. Puedes editar <span class="text-emerald-400 font-bold">$ Ganado</span> manualmente.
                     </p>
                 </div>
 
@@ -416,7 +421,8 @@
         const externalDepositInput = document.getElementById('externalDepositInput');
         const btnAddRow = document.getElementById('btnAddRow');
         const btnExport = document.getElementById('btnExport');
-        const btnImport = document.getElementById('btnImport');
+        const btnImportPC = document.getElementById('btnImportPC');
+        const btnDrive = document.getElementById('btnDrive');
         const fileInput = document.getElementById('fileInput');
         const themeCyanBtn = document.getElementById('themeCyanBtn');
         const themeRedBtn = document.getElementById('themeRedBtn');
@@ -725,7 +731,6 @@
                 row.ganado = round2(parseFloat(val) || 0);
                 row.ganadoOverridden = true;
             } else {
-                // Si cambia inv, venta o qty, reseteamos la anulación manual de ganado salvo que sea ingresado a propósito
                 if (field === 'inv' || field === 'venta' || field === 'qty') {
                     row.ganadoOverridden = false;
                 }
@@ -777,7 +782,7 @@
             }
         }
 
-        // Export JSON
+        // Export JSON to PC
         btnExport.addEventListener('click', () => {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tradesData, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -788,12 +793,17 @@
             downloadAnchor.remove();
         });
 
-        // Import JSON + Open Drive
-        btnImport.addEventListener('click', () => {
-            window.open('https://drive.google.com/drive/folders/1ggJ35LhC05PqJv6Lu9POYbV8y1nfKTzF?usp=drive_link', '_blank');
+        // Import JSON from PC (Abre directo el buscador de archivos)
+        btnImportPC.addEventListener('click', () => {
             fileInput.click();
         });
 
+        // Link a Google Drive
+        btnDrive.addEventListener('click', () => {
+            window.open('https://drive.google.com/drive/folders/1ggJ35LhC05PqJv6Lu9POYbV8y1nfKTzF?usp=drive_link', '_blank');
+        });
+
+        // Procesador de archivo JSON cargado desde PC
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -812,10 +822,11 @@
                     updateMetrics();
                     saveLocalStorage();
                 } catch (err) {
-                    console.error("Error al importar JSON", err);
+                    console.error("Error al importar el archivo JSON desde la PC", err);
                 }
             };
             reader.readAsText(file);
+            fileInput.value = ''; // Resetea la selección para permitir recargar el mismo archivo si fuese necesario
         });
 
         // Chart.js Setup
