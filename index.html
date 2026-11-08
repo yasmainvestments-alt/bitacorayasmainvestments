@@ -285,7 +285,7 @@
                             <option value="1" class="bg-gray-900">Febrero</option>
                             <option value="2" class="bg-gray-900">Marzo</option>
                             <option value="3" class="bg-gray-900">Abril</option>
-                            <option value="5" class="bg-gray-900">Mayo</option>
+                            <option value="4" class="bg-gray-900">Mayo</option>
                             <option value="5" class="bg-gray-900">Junio</option>
                             <option value="6" class="bg-gray-900">Julio</option>
                             <option value="7" class="bg-gray-900">Agosto</option>
@@ -373,7 +373,7 @@
                     </button>
 
                     <p class="text-xs font-mono text-gray-400">
-                        * Comisiones automáticas: <span class="text-gray-200">$0.66 compra + $0.66 venta</span> por contrato ($1.32 total por Qty).
+                        * Comisiones Charles Schwab: <span class="text-gray-200">$0.65 compra + $0.65 venta</span> por contrato. Puedes editar <span class="text-emerald-400 font-bold">$ Ganado</span> manualmente si es necesario.
                     </p>
                 </div>
 
@@ -431,6 +431,11 @@
         const metricTotalEarnings = document.getElementById('metricTotalEarnings');
         const metricCurrentCapital = document.getElementById('metricCurrentCapital');
         const dailyIndicatorBadge = document.getElementById('dailyIndicatorBadge');
+
+        // Redondeo monetario seguro sin decimales basura (.0000000000003)
+        function round2(val) {
+            return Math.round((val + Number.EPSILON) * 100) / 100;
+        }
 
         // Initialization
         window.addEventListener('load', () => {
@@ -546,10 +551,11 @@
                 qty: '',
                 venta: '',
                 ganado: 0,
+                ganadoOverridden: false,
                 horaCompra: '',
                 horaVenta: '',
                 pctGanado: 0,
-                capitalTotal: prevCapital + externalInject,
+                capitalTotal: round2(prevCapital + externalInject),
                 capitalOverridden: false
             };
 
@@ -560,7 +566,7 @@
             saveLocalStorage();
         });
 
-        // Calculation Engine
+        // Calculation Engine (Con soporte de Edición Manual de $ Ganado)
         function recalculateAllTrades() {
             const externalInject = parseFloat(externalDepositInput.value) || 0;
             let currentDayCounter = 1;
@@ -585,24 +591,30 @@
 
                 const uso = parseFloat(row.pctUso) || 0;
                 const montoInit = parseFloat(row.montoInicial) || 0;
-                row.sugerido = (montoInit * (uso / 100));
+                row.sugerido = round2(montoInit * (uso / 100));
 
                 const inv = parseFloat(row.inv) || 0;
                 const qty = parseFloat(row.qty) || 0;
                 const venta = parseFloat(row.venta) || 0;
 
-                if (row.inv !== '' && row.venta !== '' && row.qty !== '') {
-                    row.ganado = (venta - inv) * qty;
-                } else {
-                    row.ganado = 0;
+                const brokerFeePerContract = 1.30;
+                const brokerFees = brokerFeePerContract * qty;
+
+                // Si NO ha sido modificado manualmente el dinero ganado, lo calculamos de la fórmula
+                if (!row.ganadoOverridden) {
+                    if (row.inv !== '' && row.venta !== '' && row.qty !== '' && qty > 0) {
+                        const gananciaBruta = (venta - inv) * qty * 100;
+                        row.ganado = round2(gananciaBruta - brokerFees);
+                    } else {
+                        row.ganado = 0;
+                    }
                 }
 
-                const totalInv = inv * qty;
-                row.pctGanado = totalInv > 0 ? (row.ganado / totalInv) * 100 : 0;
+                const totalInvBruta = inv * qty * 100;
+                row.pctGanado = totalInvBruta > 0 ? round2((row.ganado / totalInvBruta) * 100) : 0;
 
-                const brokerFees = 1.32 * qty;
                 if (!row.capitalOverridden) {
-                    row.capitalTotal = montoInit + row.ganado - brokerFees + (idx === tradesData.length - 1 ? externalInject : 0);
+                    row.capitalTotal = round2(montoInit + row.ganado + (idx === tradesData.length - 1 ? externalInject : 0));
                 }
 
                 const prevCap = idx > 0 ? tradesData[idx - 1].capitalTotal : montoInit;
@@ -610,7 +622,7 @@
             });
         }
 
-        // Render Table with High-Contrast Inputs
+        // Render Table con $ Ganado Editable
         function renderTable() {
             tradeTableBody.innerHTML = '';
             const selectedMonth = monthFilter.value;
@@ -654,21 +666,21 @@
                         ${row.sugerido ? '$' + row.sugerido.toFixed(2) : ''}
                     </td>
                     <td class="p-2 text-center">
-                        <input type="number" step="0.01" value="${row.inv}" data-field="inv" class="cell-input" />
+                        <input type="number" step="0.0001" value="${row.inv}" data-field="inv" class="cell-input" placeholder="0.0000" />
                     </td>
                     <td class="p-2 text-center">
                         <input type="number" step="1" value="${row.qty}" data-field="qty" class="cell-input" />
                     </td>
                     <td class="p-2 text-center">
-                        <input type="number" step="0.01" value="${row.venta}" data-field="venta" class="cell-input" />
+                        <input type="number" step="0.0001" value="${row.venta}" data-field="venta" class="cell-input" placeholder="0.0000" />
                     </td>
-                    <td class="p-2 text-center font-mono text-xs font-bold ${row.ganado >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                        ${row.ganado !== 0 ? '$' + row.ganado.toFixed(2) : ''}
+                    <td class="p-2 text-center">
+                        <input type="number" step="0.01" value="${row.ganado !== undefined ? row.ganado : ''}" data-field="ganado" class="cell-input font-bold ${row.ganado >= 0 ? 'text-emerald-400' : 'text-rose-400'}" placeholder="$0.00" />
                     </td>
                     <td class="p-2 text-center">
                         <div class="flex items-center gap-1">
                             <input type="time" value="${row.horaCompra}" data-field="horaCompra" class="cell-input text-[11px] px-1" title="Hora Compra" />
-                            <span class="text-gray-400 text-xs font-bold">\</span>
+                            <span class="text-gray-400 text-xs font-bold">\\</span>
                             <input type="time" value="${row.horaVenta}" data-field="horaVenta" class="cell-input text-[11px] px-1" title="Hora Venta" />
                         </div>
                     </td>
@@ -686,13 +698,12 @@
                 `;
 
                 tr.querySelectorAll('.cell-input').forEach(input => {
-                    // Update model and trigger recalculations ONLY when typing is finished (blur, change, or Enter)
                     input.addEventListener('change', (e) => handleCellChange(e, row.id));
                     
                     input.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
-                            input.blur(); // Triggers blur/change event when pressing Enter
+                            input.blur();
                         }
                     });
                 });
@@ -708,9 +719,16 @@
             if (!row) return;
 
             if (field === 'capitalTotal') {
-                row.capitalTotal = parseFloat(val) || 0;
+                row.capitalTotal = round2(parseFloat(val) || 0);
                 row.capitalOverridden = true;
+            } else if (field === 'ganado') {
+                row.ganado = round2(parseFloat(val) || 0);
+                row.ganadoOverridden = true;
             } else {
+                // Si cambia inv, venta o qty, reseteamos la anulación manual de ganado salvo que sea ingresado a propósito
+                if (field === 'inv' || field === 'venta' || field === 'qty') {
+                    row.ganadoOverridden = false;
+                }
                 row[field] = val;
             }
 
@@ -744,7 +762,7 @@
 
             metricTotalTrades.innerText = filteredTrades.length;
 
-            const netEarnings = filteredTrades.reduce((acc, r) => acc + (r.ganado || 0), 0);
+            const netEarnings = round2(filteredTrades.reduce((acc, r) => acc + (r.ganado || 0), 0));
             metricTotalEarnings.innerText = `$${netEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             metricTotalEarnings.className = `text-base font-mono font-bold ${netEarnings >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
